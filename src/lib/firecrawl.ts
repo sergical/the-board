@@ -1,67 +1,59 @@
-interface FirecrawlSearchResult {
-  url: string;
-  title: string;
-  description: string;
-  markdown?: string;
-}
+import Firecrawl from "@mendable/firecrawl-js";
 
-interface FirecrawlSearchResponse {
-  success: boolean;
-  data: FirecrawlSearchResult[];
+function getClient() {
+  return new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY! });
 }
 
 export async function firecrawlSearch(
   query: string,
   options?: {
     limit?: number;
-    sources?: string[];
     tbs?: string;
   },
 ): Promise<string> {
-  const apiKey = process.env.FIRECRAWL_API_KEY;
-  if (!apiKey) {
+  if (!process.env.FIRECRAWL_API_KEY) {
     return "Error: Firecrawl API key not configured.";
   }
 
   try {
-    const response = await fetch("https://api.firecrawl.dev/v1/search", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const client = getClient();
+    console.log(`[Firecrawl] Searching: "${query}" (limit: ${options?.limit ?? 3}, tbs: ${options?.tbs ?? "none"})`);
+
+    const result = await client.search(query, {
+      limit: options?.limit ?? 3,
+      tbs: options?.tbs,
+      timeout: 15000,
+      scrapeOptions: {
+        formats: ["markdown"],
       },
-      body: JSON.stringify({
-        query,
-        limit: options?.limit ?? 3,
-        scrapeOptions: {
-          formats: ["markdown"],
-        },
-      }),
     });
 
-    if (!response.ok) {
-      const text = await response.text();
-      console.error("Firecrawl error:", response.status, text);
-      return `Could not complete research: ${response.status}`;
-    }
+    console.log(`[Firecrawl] Raw result type: ${typeof result}, keys: ${Object.keys(result ?? {}).join(", ")}`);
+    console.log(`[Firecrawl] Result preview:`, JSON.stringify(result).slice(0, 300));
 
-    const data: FirecrawlSearchResponse = await response.json();
+    // SDK returns { web: [...] } or { data: [...] } depending on version
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = result as any;
+    const items: unknown[] = r.web ?? r.data ?? (Array.isArray(r) ? r : []);
 
-    if (!data.success || !data.data?.length) {
+    console.log(`[Firecrawl] Items found: ${items.length}`);
+
+    if (!items.length) {
       return "No results found for this query.";
     }
 
-    // Format results into a readable summary for the agent to speak
-    const summaries = data.data.map((result, i) => {
-      const content = result.markdown
-        ? result.markdown.slice(0, 500)
-        : result.description;
-      return `Source ${i + 1}: ${result.title}\n${content}\nURL: ${result.url}`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const summaries = items.map((item: any, i: number) => {
+      const content = item.markdown
+        ? item.markdown.slice(0, 1500)
+        : item.description ?? "";
+      console.log(`[Firecrawl] Result ${i + 1}: ${item.title} (${item.url})`);
+      return `Source ${i + 1}: ${item.title ?? "Untitled"}\n${content}\nURL: ${item.url ?? ""}`;
     });
 
     return summaries.join("\n\n---\n\n");
   } catch (error) {
-    console.error("Firecrawl search failed:", error);
+    console.error("[Firecrawl] Search failed:", error);
     return "Research temporarily unavailable.";
   }
 }

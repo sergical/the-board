@@ -38,15 +38,49 @@ export function TranscriptPanel({ entries }: TranscriptPanelProps) {
         {entries.map((entry, i) => {
           const member = getMemberById(entry.agentId);
           const isUser = entry.agentId === "user";
+          const isSystem = entry.agentId === "system";
+
+          if (isSystem) {
+            return (
+              <div key={i} className="flex gap-3 text-sm">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-900/50 text-[10px] text-amber-400">
+                  !
+                </div>
+                <div className="flex flex-col gap-0.5 pt-1">
+                  <span className="text-xs font-semibold text-amber-400">System</span>
+                  <span className="italic text-olive-400">{entry.text}</span>
+                </div>
+              </div>
+            );
+          }
+
           return (
-            <div key={i} className="flex gap-2 text-sm">
-              <span
-                className="shrink-0 font-semibold"
-                style={{ color: isUser ? "#94a3b8" : member?.color ?? "#fff" }}
-              >
-                {isUser ? "You" : member?.name.split(" ")[0] ?? entry.agentId}:
-              </span>
-              <span className="text-olive-200">{entry.text}</span>
+            <div key={i} className="flex gap-3 text-sm">
+              {/* Avatar bubble */}
+              {isUser ? (
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-olive-700 text-[10px] font-bold text-olive-300">
+                  You
+                </div>
+              ) : member ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  className="size-8 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="size-8 shrink-0 rounded-full bg-olive-700" />
+              )}
+              {/* Message */}
+              <div className="flex flex-col gap-0.5 pt-1">
+                <span
+                  className="text-xs font-semibold"
+                  style={{ color: isUser ? "#94a3b8" : member?.color ?? "#fff" }}
+                >
+                  {isUser ? "You" : member?.name.split(" ")[0] ?? entry.agentId}
+                </span>
+                <span className="text-olive-200">{entry.text}</span>
+              </div>
             </div>
           );
         })}
