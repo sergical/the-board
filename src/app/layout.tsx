@@ -12,10 +12,6 @@ export const metadata: Metadata = {
   description:
     "Pitch your startup idea and watch 5 AI board members research the market, debate each other, and deliver a live verdict — all in real-time voice.",
   metadataBase: new URL("https://the-board-ai.vercel.app"),
-  icons: {
-    icon: "/logo.svg",
-    apple: "/logo.svg",
-  },
   openGraph: {
     title: "The Board — AI Board of Directors",
     description:
