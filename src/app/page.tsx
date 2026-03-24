@@ -106,7 +106,7 @@ export default function HomePage() {
         <Container className="pt-16 sm:pt-20">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/img/preview-v4.png"
+            src="/img/preview.png"
             alt="The Board in action — 5 AI board members deliberating on a startup pitch"
             className="w-full rounded-2xl shadow-2xl ring-1 ring-olive-200"
           />
