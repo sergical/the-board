@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Mic, Search, MessageSquare, Gavel } from "lucide-react";
 import { ButtonLink } from "@/components/elements/button";
 import { Container } from "@/components/elements/container";
 import { Heading } from "@/components/elements/heading";
@@ -35,28 +36,28 @@ const boardMembers = [
     name: "Sofia Reyes",
     role: "Finance & Unit Economics",
     image: "/img/sofia.jpg",
-    quote: '"Show me the unit economics or show me the door."',
+    quote: '"Show me the numbers or show me the door."',
   },
 ];
 
 const steps = [
   {
-    step: "01",
+    icon: Mic,
     title: "Pitch",
     desc: "Describe your startup idea by voice or text. Be specific about what you're building, who it's for, and how it makes money.",
   },
   {
-    step: "02",
+    icon: Search,
     title: "Research",
     desc: "Each board member searches the live web via Firecrawl for market data, competitors, GitHub repos, and customer pain points.",
   },
   {
-    step: "03",
+    icon: MessageSquare,
     title: "Deliberate",
     desc: "They argue. The CTO challenges the Contrarian. The Customer Advocate pushes back on Finance. Real multi-voice debate.",
   },
   {
-    step: "04",
+    icon: Gavel,
     title: "Verdict",
     desc: "Unanimous yes, split decision, or hung jury. Every vote is backed by real web research and cited evidence.",
   },
@@ -83,24 +84,32 @@ export default function HomePage() {
 
       {/* Hero */}
       <section className="bg-olive-100 py-24 sm:py-32">
-        <Container className="flex flex-col items-center gap-8">
-          <Eyebrow>AI Board of Directors</Eyebrow>
-          <Heading className="max-w-4xl text-center">
-            Pitch your startup.{" "}
-            <span className="italic">They&apos;ll be honest.</span>
+        <Container className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+          <Heading className="max-w-xl">
+            Shark Tank meets YC.
+            <br />
+            <span className="italic">Powered by AI.</span>
           </Heading>
-          <Text
-            size="lg"
-            className="flex max-w-2xl flex-col gap-4 text-center"
-          >
-            5 AI investors with different voices, different perspectives, and
-            real-time web research. They argue about your idea. Then they vote.
-          </Text>
-          <div className="flex items-center gap-4 pt-2">
-            <ButtonLink href="/pitch" size="lg">
-              Enter The Board Room
-            </ButtonLink>
+          <div className="flex max-w-sm flex-col gap-5">
+            <Text size="lg">
+              What if{" "}
+              <a href="https://github.com/garrytan/gstack" target="_blank" className="underline decoration-olive-400 underline-offset-2 hover:text-olive-950">gstack</a>
+              {" "}could talk? Five AI board members research your idea, argue about it, and vote.
+            </Text>
+            <div>
+              <ButtonLink href="/pitch" size="lg">
+                Enter The Board Room
+              </ButtonLink>
+            </div>
           </div>
+        </Container>
+        <Container className="pt-16 sm:pt-20">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/img/preview-v4.png"
+            alt="The Board in action — 5 AI board members deliberating on a startup pitch"
+            className="w-full rounded-2xl shadow-2xl ring-1 ring-olive-200"
+          />
         </Container>
       </section>
 
@@ -145,98 +154,71 @@ export default function HomePage() {
       </section>
 
       {/* How it works */}
-      <section className="bg-olive-950 py-20">
+      <section className="bg-olive-50 py-20">
         <Container className="flex flex-col gap-12">
           <div className="flex flex-col items-start gap-3">
-            <Eyebrow className="bg-olive-800 text-olive-300">
-              How it works
-            </Eyebrow>
-            <Subheading className="text-white">
+            <Eyebrow>How it works</Eyebrow>
+            <Subheading>
               From pitch to verdict in under 5 minutes
             </Subheading>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((item) => (
               <div
-                key={item.step}
-                className="flex flex-col gap-3 rounded-2xl bg-olive-900 p-6 ring-1 ring-olive-800"
+                key={item.title}
+                className="flex flex-col gap-3 rounded-2xl bg-olive-200/50 p-6 ring-1 ring-olive-200"
               >
-                <div className="flex size-10 items-center justify-center rounded-lg bg-olive-800 font-mono text-sm font-semibold text-olive-300">
-                  {item.step}
+                <div className="flex size-10 items-center justify-center rounded-lg bg-olive-950 text-olive-100">
+                  <item.icon className="size-5" />
                 </div>
-                <h3 className="font-display text-2xl text-white">
+                <h3 className="font-display text-2xl text-olive-950">
                   {item.title}
                 </h3>
-                <p className="text-sm/6 text-olive-400">{item.desc}</p>
+                <p className="text-sm/6 text-olive-600">{item.desc}</p>
               </div>
             ))}
           </div>
         </Container>
       </section>
 
-      {/* Powered by */}
-      <section className="bg-olive-100 py-16">
-        <Container className="flex flex-col items-center gap-6">
-          <Eyebrow>Powered by</Eyebrow>
-          <div className="flex items-center gap-10">
-            <a
-              href="https://elevenlabs.io"
-              target="_blank"
-              className="font-display text-2xl text-olive-800 transition-colors hover:text-olive-950"
-            >
-              ElevenLabs
-            </a>
-            <span className="text-olive-300">&times;</span>
-            <a
-              href="https://firecrawl.dev"
-              target="_blank"
-              className="font-display text-2xl text-olive-800 transition-colors hover:text-olive-950"
-            >
-              Firecrawl
-            </a>
-          </div>
-          <p className="max-w-md text-center text-sm text-olive-500">
-            5 ElevenAgents with unique voices and agent transfer. Real-time web
-            research via Firecrawl Search API. Multi-agent deliberation with
-            expressive audio tags.
-          </p>
+      {/* CTA */}
+      <section className="bg-olive-100 py-20">
+        <Container className="flex flex-col items-center gap-8 text-center">
+          <Subheading>Ready to pitch?</Subheading>
+          <Text className="max-w-lg text-olive-600">
+            5 minutes. 5 investors. Real research. No sugarcoating.
+          </Text>
+          <ButtonLink href="/pitch" size="lg">
+            Enter The Board Room
+          </ButtonLink>
         </Container>
       </section>
 
-      {/* CTA + Footer */}
-      <section className="bg-olive-950 pt-20 pb-10">
-        <Container className="flex flex-col items-center gap-8 text-center">
-          <Subheading className="text-white">
-            Ready to face The Board?
-          </Subheading>
-          <Text className="max-w-lg text-olive-400">
-            Your startup idea deserves honest feedback backed by real data. Not
-            generic AI platitudes.
-          </Text>
-          <ButtonLink href="/pitch" color="light" size="lg">
-            Start Pitching
-          </ButtonLink>
-          <div className="mt-12 border-t border-olive-800 pt-8 text-sm text-olive-600">
-            Built by{" "}
-            <a
-              href="https://x.com/sergical"
-              target="_blank"
-              className="font-medium text-olive-400 underline"
-            >
-              @sergical
-            </a>{" "}
-            for{" "}
-            <a
-              href="https://hacks.elevenlabs.io"
-              target="_blank"
-              className="underline"
-            >
-              #ElevenHacks
-            </a>{" "}
-            Week 1
+      {/* Footer */}
+      <footer className="bg-olive-50 py-8">
+        <Container>
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="flex items-center gap-2 text-sm text-olive-500">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.svg" alt="" className="size-5 opacity-40" />
+              <span>The Board</span>
+              <span className="text-olive-300">·</span>
+              <span>
+                Powered by{" "}
+                <a href="https://elevenlabs.io" target="_blank" className="underline hover:text-olive-700">ElevenLabs</a>
+                {" & "}
+                <a href="https://firecrawl.dev" target="_blank" className="underline hover:text-olive-700">Firecrawl</a>
+              </span>
+            </div>
+            <div className="text-sm text-olive-500">
+              Built by{" "}
+              <a href="https://x.com/sergical" target="_blank" className="font-medium text-olive-700 underline">@sergical</a>
+              {" for "}
+              <a href="https://hacks.elevenlabs.io" target="_blank" className="underline">#ElevenHacks</a>
+            </div>
           </div>
         </Container>
-      </section>
+      </footer>
     </div>
   );
 }
