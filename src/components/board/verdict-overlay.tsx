@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface VerdictOverlayProps {
   verdict: Verdict;
+  scores: Record<string, { score: number; reason: string }>;
   onPitchAgain: () => void;
 }
 
@@ -23,7 +24,16 @@ const verdictColors: Record<string, string> = {
   hung: "text-orange-400",
 };
 
-export function VerdictOverlay({ verdict, onPitchAgain }: VerdictOverlayProps) {
+export function VerdictOverlay({ verdict, scores, onPitchAgain }: VerdictOverlayProps) {
+  // Compute score from individual scores if agent passed 0
+  const computedScore = verdict.overallScore > 0
+    ? verdict.overallScore
+    : (() => {
+        const scoreValues = Object.values(scores).map((s) => s.score);
+        if (scoreValues.length === 0) return 0;
+        return Math.round((scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length) * 10) / 10;
+      })();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="mx-4 flex w-full max-w-2xl flex-col items-center gap-8 rounded-2xl bg-olive-900 p-8 shadow-2xl ring-1 ring-olive-700">
@@ -45,7 +55,7 @@ export function VerdictOverlay({ verdict, onPitchAgain }: VerdictOverlayProps) {
         {/* Overall Score */}
         <div className="flex flex-col items-center gap-1">
           <div className="font-mono text-6xl font-bold text-white">
-            {verdict.overallScore}
+            {computedScore}
             <span className="text-2xl text-white/40">/10</span>
           </div>
         </div>
@@ -60,12 +70,12 @@ export function VerdictOverlay({ verdict, onPitchAgain }: VerdictOverlayProps) {
                 key={member.id}
                 className="flex flex-col items-center gap-1 rounded-xl bg-olive-800/50 px-4 py-3"
               >
-                <div
-                  className="flex size-10 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ backgroundColor: member.color }}
-                >
-                  {member.shortName}
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  className="size-10 rounded-full object-cover"
+                />
                 <div className="text-xs text-olive-300">
                   {member.name.split(" ")[0]}
                 </div>

@@ -20,12 +20,9 @@ export async function firecrawlSearch(
     console.log(`[Firecrawl] Searching: "${query}" (limit: ${options?.limit ?? 3}, tbs: ${options?.tbs ?? "none"})`);
 
     const result = await client.search(query, {
-      limit: options?.limit ?? 3,
+      limit: options?.limit ?? 2,
       tbs: options?.tbs,
-      timeout: 15000,
-      scrapeOptions: {
-        formats: ["markdown"],
-      },
+      timeout: 10000,
     });
 
     console.log(`[Firecrawl] Raw result type: ${typeof result}, keys: ${Object.keys(result ?? {}).join(", ")}`);
@@ -45,7 +42,7 @@ export async function firecrawlSearch(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const summaries = items.map((item: any, i: number) => {
       const content = item.markdown
-        ? item.markdown.slice(0, 1500)
+        ? item.markdown.slice(0, 500)
         : item.description ?? "";
       console.log(`[Firecrawl] Result ${i + 1}: ${item.title} (${item.url})`);
       return `Source ${i + 1}: ${item.title ?? "Untitled"}\n${content}\nURL: ${item.url ?? ""}`;

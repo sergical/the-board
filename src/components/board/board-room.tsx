@@ -54,23 +54,18 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
 
   // Use a ref to track activeSpeaker so callbacks always have current value
   const activeSpeakerRef = useRef<string>("victoria");
-  // Track the conversation instance for sendContextualUpdate
+  // Track the conversation instance for delayed sendContextualUpdate
   const conversationRef = useRef<ReturnType<typeof useConversation> | null>(null);
 
   const conversation = useConversation({
-    onConnect: () => {
+    onConnect: ({ conversationId }) => {
+      console.log(`[EL] onConnect — conversationId: ${conversationId}`);
       setIsConnected(true);
       setIsConnecting(false);
-      // Inject guidance to prevent Victoria from thanking herself
-      conversationRef.current?.sendContextualUpdate(
-        "IMPORTANT RULE: Victoria Sterling must never address herself by name or thank herself. " +
-        "When transitioning from Victoria's own analysis to another speaker, say 'Let me now turn to [Name]' " +
-        "or 'I'd like to hear from [Name]' — never 'Thank you, Victoria'."
-      );
     },
     onDisconnect: (details: DisconnectionDetails) => {
+      console.log(`[EL] onDisconnect — reason: ${details.reason}`, details);
       setIsConnected(false);
-      console.warn("[BoardRoom] Disconnected:", details.reason, details);
 
       if (details.reason === "error") {
         setState((prev) => ({
@@ -86,12 +81,20 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
       }
     },
     onMessage: (message) => {
+      console.log(`[EL] onMessage — source: ${message.source}, event_id: ${message.event_id}, text: "${message.message.slice(0, 100)}..."`);
+
       const clean = cleanText(message.message);
-      if (!clean || clean === "..." || clean.length < 3) return;
+      if (!clean || clean === "..." || clean.length < 3) {
+        console.log(`[EL] onMessage — FILTERED (too short or noise): "${clean}"`);
+        return;
+      }
 
       if (message.source === "user") {
         // Skip mic noise / short utterances — user already has their pitch in transcript
-        if (clean.length < 10) return;
+        if (clean.length < 10) {
+          console.log(`[EL] onMessage — FILTERED user message (< 10 chars): "${clean}"`);
+          return;
+        }
         setState((prev) => ({
           ...prev,
           transcript: [...prev.transcript, { agentId: "user", text: clean }],
@@ -99,51 +102,78 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
       } else {
         const speaker = detectSpeaker(message.message, activeSpeakerRef.current);
         const filtered = filterSelfReferences(clean, speaker);
-        if (!filtered || filtered.length < 3) return;
+        if (!filtered || filtered.length < 3) {
+          console.log(`[EL] onMessage — FILTERED after self-ref removal: "${filtered}"`);
+          return;
+        }
         setState((prev) => ({
           ...prev,
           transcript: [...prev.transcript, { agentId: speaker, text: filtered }],
         }));
       }
     },
-    onError: (error) => {
-      console.error("ElevenLabs error:", error);
+    onError: (error, context) => {
+      console.error("[EL] onError —", error, context);
       setIsConnecting(false);
     },
     onStatusChange: ({ status }) => {
-      console.log(`[BoardRoom] Status: ${status}`);
+      console.log(`[EL] onStatusChange — ${status}`);
+    },
+    onModeChange: ({ mode }) => {
+      console.log(`[EL] onModeChange — ${mode}`);
+    },
+    onInterruption: (props) => {
+      console.log(`[EL] onInterruption — event_id: ${props.event_id}`);
+    },
+    onConversationMetadata: (props) => {
+      console.log(`[EL] onConversationMetadata —`, JSON.stringify(props).slice(0, 500));
     },
     onAgentToolRequest: (props) => {
-      console.log(`[BoardRoom] Tool request: ${props.tool_name}`);
+      console.log(`[EL] onAgentToolRequest — tool: ${props.tool_name}, call_id: ${props.tool_call_id}, type: ${props.tool_type}`);
       setResearchingTool(props.tool_name);
     },
     onAgentToolResponse: (props) => {
-      console.log(`[BoardRoom] Tool response: ${props.tool_name}, error=${props.is_error}`);
+      console.log(`[EL] onAgentToolResponse — tool: ${props.tool_name}, error: ${props.is_error}, called: ${props.is_called}`);
       setResearchingTool(null);
-
-      if (props.is_error) {
-        conversationRef.current?.sendContextualUpdate(
-          `The ${props.tool_name} research tool encountered an error. Continue the discussion using your existing knowledge.`
-        );
-      }
+    },
+    onDebug: (props) => {
+      console.log(`[EL] onDebug —`, props);
     },
   });
 
   // Keep conversationRef in sync
   conversationRef.current = conversation;
 
+  // Delayed contextual update — send Victoria guidance 10s after connection
+  // to avoid interfering with agent initialization
+  useEffect(() => {
+    if (!isConnected) return;
+    const timer = setTimeout(() => {
+      console.log("[EL] Sending delayed contextual update (Victoria self-reference guidance)");
+      conversationRef.current?.sendContextualUpdate(
+        "IMPORTANT RULE: Victoria Sterling must never address herself by name or thank herself. " +
+        "When transitioning from Victoria's own analysis to another speaker, say 'Let me now turn to [Name]' " +
+        "or 'I'd like to hear from [Name]' — never 'Thank you, Victoria'."
+      );
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [isConnected]);
+
   // Client tools — use setState updater functions (no stale closures)
   const clientTools = {
     set_phase: useCallback(async (params: { phase: string }) => {
+      console.log(`[EL] clientTool:set_phase — ${params.phase}`);
       setState((prev) => ({ ...prev, phase: params.phase as BoardState["phase"] }));
       return `Phase set to ${params.phase}`;
     }, []),
     set_active_speaker: useCallback(async (params: { agent_id: string }) => {
+      console.log(`[EL] clientTool:set_active_speaker — ${params.agent_id}`);
       activeSpeakerRef.current = params.agent_id;
       setState((prev) => ({ ...prev, activeSpeaker: params.agent_id }));
       return `Active speaker: ${params.agent_id}`;
     }, []),
     add_finding: useCallback(async (params: { agent_id: string; type: string; title: string; detail: string; source_url?: string }) => {
+      console.log(`[EL] clientTool:add_finding — ${params.agent_id}: ${params.title}`);
       const finding: Finding = {
         id: crypto.randomUUID(),
         agentId: params.agent_id,
@@ -156,6 +186,7 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
       return `Finding added: ${params.title}`;
     }, []),
     update_score: useCallback(async (params: { agent_id: string; score: number; reason: string }) => {
+      console.log(`[EL] clientTool:update_score — ${params.agent_id}: ${params.score}/10`);
       setState((prev) => ({
         ...prev,
         scores: { ...prev.scores, [params.agent_id]: { score: params.score, reason: params.reason } },
@@ -163,6 +194,7 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
       return `Score updated: ${params.agent_id} = ${params.score}/10`;
     }, []),
     cast_vote: useCallback(async (params: { agent_id: string; vote: string; reason: string }) => {
+      console.log(`[EL] clientTool:cast_vote — ${params.agent_id}: ${params.vote}`);
       setState((prev) => ({
         ...prev,
         verdict: {
@@ -176,6 +208,7 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
       return `Vote cast: ${params.agent_id} = ${params.vote}`;
     }, []),
     render_verdict: useCallback(async (params: { verdict_type: string; overall_score: number; summary: string }) => {
+      console.log(`[EL] clientTool:render_verdict — ${params.verdict_type}, score: ${params.overall_score}`);
       setState((prev) => ({
         ...prev,
         phase: "verdict",
@@ -221,6 +254,7 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
         const { signedUrl } = await res.json();
         if (cancelled) return;
 
+        console.log("[EL] Starting session with dynamicVariables:", { startup_pitch: enrichedPitch.slice(0, 100) + "..." });
         await conversation.startSession({
           signedUrl,
           dynamicVariables: { startup_pitch: enrichedPitch },
@@ -228,7 +262,7 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
         });
       } catch (err) {
         if (!cancelled) {
-          console.error("Failed to start session:", err);
+          console.error("[EL] Failed to start session:", err);
           setIsConnecting(false);
         }
       }
@@ -337,7 +371,7 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
 
       {/* Verdict Overlay */}
       {state.phase === "verdict" && state.verdict && (
-        <VerdictOverlay verdict={state.verdict} onPitchAgain={onEnd} />
+        <VerdictOverlay verdict={state.verdict} scores={state.scores} onPitchAgain={onEnd} />
       )}
     </div>
   );
