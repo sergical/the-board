@@ -370,7 +370,7 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
       </div>
 
       {/* Verdict Overlay */}
-      {state.phase === "verdict" && state.verdict && (
+      {state.phase === "verdict" && state.verdict?.summary && (
         <VerdictOverlay verdict={state.verdict} scores={state.scores} onPitchAgain={onEnd} />
       )}
     </div>
