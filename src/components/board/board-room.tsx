@@ -51,11 +51,11 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [researchingTool, setResearchingTool] = useState<string | null>(null);
+  // Track which members have been heard (audio started) to sync UI with audio
+  const [heardMembers, setHeardMembers] = useState<Set<string>>(new Set(["user"]));
 
   // Use a ref to track activeSpeaker so callbacks always have current value
   const activeSpeakerRef = useRef<string>("victoria");
-  // Track the conversation instance for delayed sendContextualUpdate
-  const conversationRef = useRef<ReturnType<typeof useConversation> | null>(null);
 
   const conversation = useConversation({
     onConnect: ({ conversationId }) => {
@@ -84,17 +84,10 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
       console.log(`[EL] onMessage — source: ${message.source}, event_id: ${message.event_id}, text: "${message.message.slice(0, 100)}..."`);
 
       const clean = cleanText(message.message);
-      if (!clean || clean === "..." || clean.length < 3) {
-        console.log(`[EL] onMessage — FILTERED (too short or noise): "${clean}"`);
-        return;
-      }
+      if (!clean || clean === "..." || clean.length < 3) return;
 
       if (message.source === "user") {
-        // Skip mic noise / short utterances — user already has their pitch in transcript
-        if (clean.length < 10) {
-          console.log(`[EL] onMessage — FILTERED user message (< 10 chars): "${clean}"`);
-          return;
-        }
+        if (clean.length < 10) return;
         setState((prev) => ({
           ...prev,
           transcript: [...prev.transcript, { agentId: "user", text: clean }],
@@ -102,10 +95,16 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
       } else {
         const speaker = detectSpeaker(message.message, activeSpeakerRef.current);
         const filtered = filterSelfReferences(clean, speaker);
-        if (!filtered || filtered.length < 3) {
-          console.log(`[EL] onMessage — FILTERED after self-ref removal: "${filtered}"`);
-          return;
-        }
+        if (!filtered || filtered.length < 3) return;
+
+        // Mark this member as heard — their findings/scores can now be shown
+        setHeardMembers((prev) => {
+          if (prev.has(speaker)) return prev;
+          const next = new Set(prev);
+          next.add(speaker);
+          return next;
+        });
+
         setState((prev) => ({
           ...prev,
           transcript: [...prev.transcript, { agentId: speaker, text: filtered }],
@@ -125,9 +124,6 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
     onInterruption: (props) => {
       console.log(`[EL] onInterruption — event_id: ${props.event_id}`);
     },
-    onConversationMetadata: (props) => {
-      console.log(`[EL] onConversationMetadata —`, JSON.stringify(props).slice(0, 500));
-    },
     onAgentToolRequest: (props) => {
       console.log(`[EL] onAgentToolRequest — tool: ${props.tool_name}, call_id: ${props.tool_call_id}, type: ${props.tool_type}`);
       setResearchingTool(props.tool_name);
@@ -140,24 +136,6 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
       console.log(`[EL] onDebug —`, props);
     },
   });
-
-  // Keep conversationRef in sync
-  conversationRef.current = conversation;
-
-  // Delayed contextual update — send Victoria guidance 10s after connection
-  // to avoid interfering with agent initialization
-  useEffect(() => {
-    if (!isConnected) return;
-    const timer = setTimeout(() => {
-      console.log("[EL] Sending delayed contextual update (Victoria self-reference guidance)");
-      conversationRef.current?.sendContextualUpdate(
-        "IMPORTANT RULE: Victoria Sterling must never address herself by name or thank herself. " +
-        "When transitioning from Victoria's own analysis to another speaker, say 'Let me now turn to [Name]' " +
-        "or 'I'd like to hear from [Name]' — never 'Thank you, Victoria'."
-      );
-    }, 10000);
-    return () => clearTimeout(timer);
-  }, [isConnected]);
 
   // Client tools — use setState updater functions (no stale closures)
   const clientTools = {
@@ -284,12 +262,19 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
 
   // Map tool names to friendly labels
   const toolLabels: Record<string, string> = {
-    market_research: "market data",
-    tech_research: "technical landscape",
-    customer_research: "customer feedback",
-    competitor_research: "competitor landscape",
-    finance_research: "financial data",
+    research_market: "market data",
+    research_tech: "technical landscape",
+    research_customer: "customer feedback",
+    research_competitor: "competitor landscape",
+    research_finance: "financial data",
   };
+
+  // Filter findings and scores to only show members that have been heard
+  const visibleFindings = state.findings.filter((f) => heardMembers.has(f.agentId));
+  const visibleScores: Record<string, { score: number; reason: string }> = {};
+  for (const [id, score] of Object.entries(state.scores)) {
+    if (heardMembers.has(id)) visibleScores[id] = score;
+  }
 
   return (
     <div className="dark flex h-screen flex-col bg-olive-900 text-olive-50">
@@ -315,7 +300,7 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
         <div className="flex items-center justify-between border-b border-olive-800 px-4 py-4">
           <AgentPanel
             activeSpeaker={state.activeSpeaker}
-            scores={state.scores}
+            scores={visibleScores}
             votes={state.verdict?.votes ?? {}}
           />
           <div className="flex flex-col items-center gap-1">
@@ -363,7 +348,7 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
               FINDINGS
             </div>
             <div className="flex-1 overflow-hidden">
-              <FindingsPanel findings={state.findings} />
+              <FindingsPanel findings={visibleFindings} />
             </div>
           </div>
         </div>
