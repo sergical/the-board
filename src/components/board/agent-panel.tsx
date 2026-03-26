@@ -9,17 +9,45 @@ interface AgentPanelProps {
 }
 
 export function AgentPanel({ activeSpeaker, scores, votes }: AgentPanelProps) {
+  const activeMember = BOARD_MEMBERS.find((m) => m.id === activeSpeaker) ?? BOARD_MEMBERS[0];
+  const inactiveMembers = BOARD_MEMBERS.filter((m) => m.id !== activeMember.id);
+
   return (
-    <div className="flex items-start justify-center gap-3 sm:gap-8">
-      {BOARD_MEMBERS.map((member) => (
+    <>
+      {/* Mobile: prominent speaker + collapsed others */}
+      <div className="flex items-center gap-3 sm:hidden">
         <AgentAvatar
-          key={member.id}
-          member={member}
-          isActive={activeSpeaker === member.id}
-          score={scores[member.id]}
-          vote={votes[member.id]?.vote}
+          member={activeMember}
+          isActive={activeSpeaker === activeMember.id}
+          score={scores[activeMember.id]}
+          vote={votes[activeMember.id]?.vote}
+          variant="prominent"
         />
-      ))}
-    </div>
+        <div className="flex -space-x-2">
+          {inactiveMembers.map((member) => (
+            <AgentAvatar
+              key={member.id}
+              member={member}
+              isActive={false}
+              vote={votes[member.id]?.vote}
+              variant="collapsed"
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: full row */}
+      <div className="hidden items-start justify-center gap-8 sm:flex">
+        {BOARD_MEMBERS.map((member) => (
+          <AgentAvatar
+            key={member.id}
+            member={member}
+            isActive={activeSpeaker === member.id}
+            score={scores[member.id]}
+            vote={votes[member.id]?.vote}
+          />
+        ))}
+      </div>
+    </>
   );
 }

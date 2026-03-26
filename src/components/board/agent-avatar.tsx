@@ -6,9 +6,70 @@ interface AgentAvatarProps {
   isActive: boolean;
   score?: AgentScore;
   vote?: "invest" | "pass" | "abstain";
+  variant?: "default" | "prominent" | "collapsed";
 }
 
-export function AgentAvatar({ member, isActive, score, vote }: AgentAvatarProps) {
+export function AgentAvatar({ member, isActive, score, vote, variant = "default" }: AgentAvatarProps) {
+  if (variant === "collapsed") {
+    return (
+      <div className="relative" title={member.name}>
+        <div className="size-7 overflow-hidden rounded-full ring-2 ring-olive-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={member.image} alt={member.name} className="size-full object-cover" />
+        </div>
+        {vote && (
+          <span
+            className={cn(
+              "absolute -bottom-0.5 -right-0.5 size-2 rounded-full ring-1 ring-olive-900",
+              vote === "invest" && "bg-emerald-400",
+              vote === "pass" && "bg-red-400",
+              vote === "abstain" && "bg-yellow-400",
+            )}
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (variant === "prominent") {
+    return (
+      <div className="flex items-center gap-3">
+        <div
+          className={cn(
+            "relative size-12 overflow-hidden rounded-full transition-all duration-500",
+            isActive && "ring-2 ring-offset-2 ring-offset-olive-900",
+          )}
+          style={{
+            ...(isActive ? { "--tw-ring-color": member.color } as React.CSSProperties : {}),
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={member.image} alt={member.name} className="size-full object-cover" />
+          {isActive && (
+            <span className="absolute -bottom-1 -right-1 flex size-3">
+              <span
+                className="absolute inline-flex size-full animate-ping rounded-full opacity-75"
+                style={{ backgroundColor: member.color }}
+              />
+              <span
+                className="relative inline-flex size-3 rounded-full"
+                style={{ backgroundColor: member.color }}
+              />
+            </span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-olive-100">{member.name.split(" ")[0]}</div>
+          <div className="text-[10px] text-olive-400">{member.role}</div>
+          {score && (
+            <div className="mt-0.5 text-xs font-mono text-white/60">{score.score}/10</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Default variant (desktop)
   return (
     <div className="flex flex-col items-center gap-2">
       <div

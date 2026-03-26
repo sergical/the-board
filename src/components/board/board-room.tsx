@@ -290,14 +290,15 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.svg" alt="The Board" className="size-6 invert" />
-          <div className="font-display text-lg">The Board</div>
+          <div className="hidden font-display text-lg sm:block">The Board</div>
         </div>
         <PhaseIndicator currentPhase={state.phase} />
         <button
           onClick={endSession}
           className="rounded-full bg-olive-800 px-3 py-1 text-xs font-medium text-olive-300 hover:bg-olive-700"
         >
-          End Session
+          <span className="sm:hidden">End</span>
+          <span className="hidden sm:inline">End Session</span>
         </button>
       </header>
 
@@ -321,13 +322,23 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
                   getFrequencyData={conversation.getOutputByteFrequencyData}
                   isActive={conversation.isSpeaking}
                   barCount={7}
-                  className="h-10"
+                  className="hidden h-10 sm:flex"
+                />
+                <AudioBars
+                  getVolume={conversation.getOutputVolume}
+                  getFrequencyData={conversation.getOutputByteFrequencyData}
+                  isActive={conversation.isSpeaking}
+                  barCount={5}
+                  className="flex h-8 sm:hidden"
                 />
                 <div className="flex items-center gap-1.5">
                   <div className={`size-1.5 rounded-full ${conversation.isSpeaking ? "bg-emerald-400 animate-pulse" : "bg-olive-500"}`} />
                   <span className="text-[10px] text-olive-400">
                     {researchingTool
-                      ? `Researching ${toolLabels[researchingTool] ?? researchingTool}...`
+                      ? <>
+                          <span className="sm:hidden">Researching...</span>
+                          <span className="hidden sm:inline">Researching {toolLabels[researchingTool] ?? researchingTool}...</span>
+                        </>
                       : conversation.isSpeaking
                         ? "Speaking"
                         : "Listening"}
