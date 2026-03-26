@@ -16,6 +16,13 @@ import {
   type Finding,
   type Verdict,
 } from "@/lib/board-state";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface BoardRoomProps {
   pitch: string;
@@ -342,8 +349,8 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
             </div>
           </div>
 
-          {/* Findings */}
-          <div className="flex w-80 flex-col max-sm:hidden">
+          {/* Findings: desktop sidebar */}
+          <div className="hidden sm:flex w-80 flex-col">
             <div className="border-b border-olive-800 px-4 py-2 text-xs font-medium tracking-wider text-olive-500">
               FINDINGS
             </div>
@@ -352,6 +359,30 @@ export function BoardRoom({ pitch, onEnd }: BoardRoomProps) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Findings: mobile drawer */}
+      <div className="sm:hidden">
+        <Drawer>
+          <DrawerTrigger asChild>
+            <button className="fixed bottom-4 right-4 z-40 flex items-center gap-1.5 rounded-full bg-olive-800 px-4 py-2 text-xs font-medium text-olive-300 shadow-lg ring-1 ring-olive-700">
+              Findings
+              {visibleFindings.length > 0 && (
+                <span className="flex size-5 items-center justify-center rounded-full bg-olive-600 text-[10px] font-bold text-olive-100">
+                  {visibleFindings.length}
+                </span>
+              )}
+            </button>
+          </DrawerTrigger>
+          <DrawerContent className="bg-olive-900 border-olive-700">
+            <DrawerHeader>
+              <DrawerTitle className="text-olive-200">Findings</DrawerTitle>
+            </DrawerHeader>
+            <div className="max-h-[60vh] overflow-auto px-2 pb-6">
+              <FindingsPanel findings={visibleFindings} />
+            </div>
+          </DrawerContent>
+        </Drawer>
       </div>
 
       {/* Verdict Overlay */}

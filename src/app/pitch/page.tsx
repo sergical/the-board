@@ -41,7 +41,7 @@ export default function PitchPage() {
 
   return (
     <div className="dark flex min-h-screen flex-col items-center justify-center bg-olive-900 px-4">
-      <div className="flex w-full max-w-2xl flex-col items-center gap-8">
+      <div className="flex w-full max-w-2xl flex-col items-center gap-6 sm:gap-8">
         {/* Header */}
         <div className="flex flex-col items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -50,7 +50,7 @@ export default function PitchPage() {
             alt="The Board"
             className="size-10 invert opacity-60"
           />
-          <h1 className="font-display text-4xl text-olive-50 sm:text-5xl">
+          <h1 className="font-display text-3xl text-olive-50 sm:text-5xl">
             Pitch to The Board
           </h1>
           <p className="max-w-md text-center text-sm/6 text-olive-400">
@@ -68,7 +68,7 @@ export default function PitchPage() {
               value={pitch}
               onChange={(e) => setPitch(e.target.value)}
               placeholder="We're building an AI-powered tool that helps freelance designers find and win more clients by automatically analyzing job postings and generating tailored proposals..."
-              className="h-36 w-full resize-none rounded-xl border border-olive-700/50 bg-olive-800/50 px-4 py-3 pb-14 text-sm/6 text-olive-100 placeholder:text-olive-600 focus:border-olive-600 focus:outline-none focus:ring-1 focus:ring-olive-600"
+              className="h-36 w-full resize-none rounded-xl border border-olive-700/50 bg-olive-800/50 px-4 py-3 pb-14 text-base/6 sm:text-sm/6 text-olive-100 placeholder:text-olive-600 focus:border-olive-600 focus:outline-none focus:ring-1 focus:ring-olive-600"
             />
             <div className="absolute right-3 bottom-3 flex items-center gap-2">
               <SpeechInput
@@ -110,7 +110,7 @@ export default function PitchPage() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://yourstartup.com"
-            className="w-full rounded-xl border border-olive-700/50 bg-olive-800/50 px-4 py-3 text-sm text-olive-100 placeholder:text-olive-600 focus:border-olive-600 focus:outline-none focus:ring-1 focus:ring-olive-600"
+            className="w-full rounded-xl border border-olive-700/50 bg-olive-800/50 px-4 py-3 text-base sm:text-sm text-olive-100 placeholder:text-olive-600 focus:border-olive-600 focus:outline-none focus:ring-1 focus:ring-olive-600"
           />
         </div>
 

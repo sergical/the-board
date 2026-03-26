@@ -10,7 +10,7 @@ interface AgentPanelProps {
 
 export function AgentPanel({ activeSpeaker, scores, votes }: AgentPanelProps) {
   return (
-    <div className="flex items-start justify-center gap-6 sm:gap-8">
+    <div className="flex items-start justify-center gap-3 sm:gap-8">
       {BOARD_MEMBERS.map((member) => (
         <AgentAvatar
           key={member.id}
